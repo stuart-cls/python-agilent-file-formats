@@ -75,6 +75,24 @@ def _get_date(f):
 
     return d
 
+def _fpa_size(datasize, Npts):
+    """
+    Determine FPA size (255 block preamble, wavenumbers, sqrt)
+    FPA is most likely 128 or 64 pixels square
+    This also provides sanity check for wavelengths array
+
+    Args:
+        datasize (int): size of data (after reading as float32)
+        Npts (int):     number of points in spectra
+    """
+    fpasize = datasize - 255
+    fpasize /= Npts
+    fpasize = int(np.sqrt(fpasize))
+    if fpasize not in [32, 64, 128]:
+        raise ValueError("Unexpected FPA size: {}".format(fpasize))
+    return fpasize
+
+
 class DataObject(object):
     """
     Simple container of a data array and information about that array.
@@ -100,7 +118,7 @@ class agilentImage(DataObject):
         filename (str): full path to .seq file
 
     Attributes:
-        info (dict):    Dictionary of acquisition information
+        info (dict):            Dictionary of acquisition information
         data (:obj:`ndarray`):  3-dimensional array (height x width x wavenumbers)
         wavenumbers (list):     Wavenumbers in order of .data array
         width (int):            Width of image in pixels (rows)
@@ -128,15 +146,7 @@ class agilentImage(DataObject):
         p = p_in.with_suffix(".dat")
         with p.open(mode='rb') as f:
             data = np.fromfile(f, dtype=np.float32)
-        # Determine FPA size (255 byte preamble, wavenumbers, sqrt)
-        # FPA is most likely 128 or 64 pixels square
-        # This also provides sanity check for wavelengths array
-        fpasize = data.size
-        fpasize -= 255
-        fpasize /= self.info['Npts']
-        fpasize = int(np.sqrt(fpasize))
-        if fpasize not in [32, 64, 128]:
-            raise ValueError("Unexpected FPA size: {}".format(fpasize))
+        fpasize = _fpa_size(data.size, self.info['Npts'])
         # Reshape ndarray
         data = data[255:]
         # Using shape attribute to raise error if a copy is made of the array
