@@ -92,6 +92,21 @@ def _fpa_size(datasize, Npts):
         raise ValueError("Unexpected FPA size: {}".format(fpasize))
     return fpasize
 
+def _reshape_tile(data, shape):
+    """
+    Reshape/transpose/rotate FPA tile data
+    """
+    # Reshape ndarray
+    data = data[255:]
+    # Using shape attribute to raise error if a copy is made of the array
+    data.shape = shape
+    # Transpose to standard [ rows, columns, wavelengths ]
+    data = np.transpose(data, (1,2,0))
+    # Rotate and flip array
+    data = np.rot90(data, 2)
+    data = np.fliplr(data)
+    return data
+
 
 class DataObject(object):
     """
@@ -147,17 +162,7 @@ class agilentImage(DataObject):
         with p.open(mode='rb') as f:
             data = np.fromfile(f, dtype=np.float32)
         fpasize = _fpa_size(data.size, self.info['Npts'])
-        # Reshape ndarray
-        data = data[255:]
-        # Using shape attribute to raise error if a copy is made of the array
-        data.shape = (self.info['Npts'], fpasize, fpasize)
-        # Transpose to standard [ rows, columns, wavelengths ]
-        data = np.transpose(data, (1,2,0))
-        # Rotate and flip array
-        data = np.rot90(data, 2)
-        data = np.fliplr(data)
-        # Return array
-        self.data = data
+        self.data = _reshape_tile(data, (self.info['Npts'], fpasize, fpasize))
 
         if DEBUG:
             print("FPA Size is {}".format(fpasize))
