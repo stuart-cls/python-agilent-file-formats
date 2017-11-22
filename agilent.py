@@ -12,9 +12,17 @@ def _check_files(filename, exts):
     """
     #TODO test whether IOError (deprecated) or OSError is better handled by Orange
     #TODO I think some filenames are written all lower-case by ResPro: Handle this
+    # .dmt for sure, done
     p = Path(filename)
     for ext in exts:
-        ps = p.with_suffix(ext)
+        if ext == ".dmt":
+            # Always lowercase
+            ps = p.parent.joinpath(p.with_suffix(ext).name.lower())
+        elif ext in [".drd", ".dmd"]:
+            # Always has at least _0000_0000 tile
+            ps = p.parent.joinpath(p.stem + "_0000_0000" + ext)
+        else:
+            ps = p.with_suffix(ext)
         if not ps.is_file():
             raise OSError('File "{}" was not found.'.format(ps))
     return p
@@ -166,3 +174,71 @@ class agilentImage(DataObject):
 
         if DEBUG:
             print("FPA Size is {}".format(fpasize))
+
+
+class agilentMosaic(DataObject):
+    """
+    Extracts the spectra from an Agilent mosaic FPA image.
+
+    Attributes beyond .info and .data are provided for consistency with MATLAB code
+
+    Args:
+        filename (str): full path to .dms file
+
+    Attributes:
+        info (dict):            Dictionary of acquisition information
+        data (:obj:`ndarray`):  3-dimensional array (height x width x wavenumbers)
+        wavenumbers (list):     Wavenumbers in order of .data array
+        width (int):            Width of mosaic in pixels (rows)
+        height (int):           Width of mosaic in pixels (columns)
+        filename (str):         Full path to .dms file
+        acqdate (str):          Date and time of acquisition
+
+    Based on agilent-file-formats MATLAB code by Alex Henderson:
+    https://bitbucket.org/AlexHenderson/agilent-file-formats
+    """
+
+    def __init__(self, filename):
+        super().__init__()
+        p = _check_files(filename, [".dms", ".dmt", ".drd", ".dmd"])
+        self._get_dmt_info(p)
+        self._get_dmd(p)
+
+    def _get_dmt_info(self, p_in):
+        # .dmt is always lowercase
+        p = p_in.parent.joinpath(p_in.with_suffix(".dmt").name.lower())
+        with p.open(mode='rb') as f:
+            self.info.update(_get_wavenumbers(f))
+            #self.info.update(_get_date(f)) #TODO hard coding timestamp location was a mistake :)
+
+    def _get_dmd(self, p_in):
+        # Determine mosiac dimensions by counting .dmd files
+        xtiles = sum(1 for _ in
+                p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.dmd"))
+        ytiles = sum(1 for _ in
+                p_in.parent.glob(p_in.stem + "_0000_[0-9][0-9][0-9][0-9].dmd"))
+        # _0000_0000.dmd primary file
+        p = p_in.parent.joinpath(p_in.stem + "_0000_0000.dmd")
+        Npts = self.info['Npts']
+        fpasize = _fpa_size(p.stat().st_size / 4, Npts)
+        # Allocate array
+        data = np.zeros((xtiles*fpasize, ytiles*fpasize, Npts),
+                        dtype=np.float32)
+
+        for y in range(ytiles):
+            for x in range(xtiles):
+                p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
+                with p_dmd.open(mode='rb') as f:
+                    tile = np.fromfile(f, dtype=np.float32)
+                tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
+                # x, y order switched in numpy array
+                data[y*fpasize:(y+1)*fpasize, x*fpasize:(x+1)*fpasize, :] = tile
+
+        self.data = data
+
+        if DEBUG:
+            print("{0} x {1} tiles found".format(xtiles, ytiles))
+            print("FPA size is {}".format(fpasize))
+            print("Total dimensions are {0} x {1} or {2} spectra.".format(
+                xtiles*fpasize, ytiles*fpasize, xtiles*ytiles*fpasize**2))
+            print(data.shape)
