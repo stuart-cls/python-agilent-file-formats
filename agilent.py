@@ -102,7 +102,7 @@ def _fpa_size(datasize, Npts):
 
 def _reshape_tile(data, shape):
     """
-    Reshape/transpose/rotate FPA tile data
+    Reshape and transpose FPA tile data
     """
     # Reshape ndarray
     data = data[255:]
@@ -110,9 +110,6 @@ def _reshape_tile(data, shape):
     data.shape = shape
     # Transpose to standard [ rows, columns, wavelengths ]
     data = np.transpose(data, (1,2,0))
-    # Rotate and flip array
-    data = np.rot90(data, 2)
-    data = np.fliplr(data)
     return data
 
 
@@ -139,6 +136,7 @@ class agilentImage(DataObject):
 
     Args:
         filename (str): full path to .seq file
+        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
 
     Attributes:
         info (dict):            Dictionary of acquisition information
@@ -153,9 +151,10 @@ class agilentImage(DataObject):
     https://bitbucket.org/AlexHenderson/agilent-file-formats
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, MAT=False):
         super().__init__()
         p = _check_files(filename, [".seq", ".dat", ".bsp"])
+        self.MAT = MAT
         self._get_bsp_info(p)
         self._get_dat(p)
 
@@ -170,7 +169,13 @@ class agilentImage(DataObject):
         with p.open(mode='rb') as f:
             data = np.fromfile(f, dtype=np.float32)
         fpasize = _fpa_size(data.size, self.info['Npts'])
-        self.data = _reshape_tile(data, (self.info['Npts'], fpasize, fpasize))
+        data = _reshape_tile(data, (self.info['Npts'], fpasize, fpasize))
+
+        if self.MAT:
+            # Rotate and flip tile to match matplotlib/MATLAB image coordinates
+            data = np.flipud(data)
+
+        self.data = data
 
         if DEBUG:
             print("FPA Size is {}".format(fpasize))
@@ -184,6 +189,7 @@ class agilentMosaic(DataObject):
 
     Args:
         filename (str): full path to .dms file
+        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
 
     Attributes:
         info (dict):            Dictionary of acquisition information
@@ -198,9 +204,10 @@ class agilentMosaic(DataObject):
     https://bitbucket.org/AlexHenderson/agilent-file-formats
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, MAT=False):
         super().__init__()
         p = _check_files(filename, [".dms", ".dmt", ".drd", ".dmd"])
+        self.MAT = MAT
         self._get_dmt_info(p)
         self._get_dmd(p)
 
@@ -213,9 +220,9 @@ class agilentMosaic(DataObject):
 
     def _get_dmd(self, p_in):
         # Determine mosiac dimensions by counting .dmd files
-        xtiles = sum(1 for _ in
-                p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.dmd"))
         ytiles = sum(1 for _ in
+                p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.dmd"))
+        xtiles = sum(1 for _ in
                 p_in.parent.glob(p_in.stem + "_0000_[0-9][0-9][0-9][0-9].dmd"))
         # _0000_0000.dmd primary file
         p = p_in.parent.joinpath(p_in.stem + "_0000_0000.dmd")
@@ -225,20 +232,28 @@ class agilentMosaic(DataObject):
         data = np.zeros((xtiles*fpasize, ytiles*fpasize, Npts),
                         dtype=np.float32)
 
-        for y in range(ytiles):
-            for x in range(xtiles):
-                p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
-                with p_dmd.open(mode='rb') as f:
-                    tile = np.fromfile(f, dtype=np.float32)
-                tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
-                # x, y order switched in numpy array
-                data[y*fpasize:(y+1)*fpasize, x*fpasize:(x+1)*fpasize, :] = tile
-
-        self.data = data
-
         if DEBUG:
             print("{0} x {1} tiles found".format(xtiles, ytiles))
             print("FPA size is {}".format(fpasize))
             print("Total dimensions are {0} x {1} or {2} spectra.".format(
                 xtiles*fpasize, ytiles*fpasize, xtiles*ytiles*fpasize**2))
             print(data.shape)
+
+        for y in range(ytiles):
+            for x in range(xtiles):
+                p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(y,x))
+                with p_dmd.open(mode='rb') as f:
+                    tile = np.fromfile(f, dtype=np.float32)
+                tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
+                if self.MAT:
+                    # Rotate and flip tile to match matplotlib/MATLAB image coordinates
+                    tile = np.flipud(tile)
+                    data[x*fpasize:(x+1)*fpasize, y*fpasize:(y+1)*fpasize, :] = tile
+                else:
+                    # Tile data is in normal cartesian coordinates
+                    # but tile numbering (000y_000x)
+                    # is top-to-bottom, left-to-right (image coordinates)
+                    data[(xtiles-x-1)*fpasize:(xtiles-x)*fpasize, (y)*fpasize:(y+1)*fpasize, :] = tile
+
+
+        self.data = data
