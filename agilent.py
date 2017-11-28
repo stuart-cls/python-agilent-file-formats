@@ -220,16 +220,17 @@ class agilentMosaic(DataObject):
 
     def _get_dmd(self, p_in):
         # Determine mosiac dimensions by counting .dmd files
-        ytiles = sum(1 for _ in
-                p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.dmd"))
         xtiles = sum(1 for _ in
+                p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.dmd"))
+        ytiles = sum(1 for _ in
                 p_in.parent.glob(p_in.stem + "_0000_[0-9][0-9][0-9][0-9].dmd"))
         # _0000_0000.dmd primary file
         p = p_in.parent.joinpath(p_in.stem + "_0000_0000.dmd")
         Npts = self.info['Npts']
         fpasize = _fpa_size(p.stat().st_size / 4, Npts)
         # Allocate array
-        data = np.zeros((xtiles*fpasize, ytiles*fpasize, Npts),
+        # (rows, columns, wavenumbers)
+        data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
                         dtype=np.float32)
 
         if DEBUG:
@@ -241,19 +242,18 @@ class agilentMosaic(DataObject):
 
         for y in range(ytiles):
             for x in range(xtiles):
-                p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(y,x))
+                p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
                 with p_dmd.open(mode='rb') as f:
                     tile = np.fromfile(f, dtype=np.float32)
                 tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
                 if self.MAT:
                     # Rotate and flip tile to match matplotlib/MATLAB image coordinates
                     tile = np.flipud(tile)
-                    data[x*fpasize:(x+1)*fpasize, y*fpasize:(y+1)*fpasize, :] = tile
+                    data[y*fpasize:(y+1)*fpasize, x*fpasize:(x+1)*fpasize, :] = tile
                 else:
                     # Tile data is in normal cartesian coordinates
-                    # but tile numbering (000y_000x)
-                    # is top-to-bottom, left-to-right (image coordinates)
-                    data[(xtiles-x-1)*fpasize:(xtiles-x)*fpasize, (y)*fpasize:(y+1)*fpasize, :] = tile
-
+                    # but tile numbering (000x_000y)
+                    # is left-to-right, top-to-bottom (image coordinates)
+                    data[(ytiles-y-1)*fpasize:(ytiles-y)*fpasize, (x)*fpasize:(x+1)*fpasize, :] = tile
 
         self.data = data
