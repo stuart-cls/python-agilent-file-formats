@@ -7,8 +7,10 @@ from agilent import agilentImage, agilentMosaic
 am = agilentMosaic("/data/staff/reads/USAF 25X Mosaic/USAF 25X Mosaic.dms", MAT=False)
 print(am.data.shape)
 img = am.data.sum(axis=2)
-print(img.shape)
-imgplot = plt.imshow(img, origin='lower')
+extent = [0, am.data.shape[1]*am.info['FPA Pixel Size'],
+          0, am.data.shape[0]*am.info['FPA Pixel Size']]
+print(img.shape, extent)
+imgplot = plt.imshow(img, origin='lower', extent=extent)
 plt.show()
 
 am = agilentMosaic("/data/staff/reads/USAF 25X Mosaic/USAF 25X Mosaic.dms", MAT=True)

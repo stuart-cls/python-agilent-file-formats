@@ -61,27 +61,58 @@ def _get_wavenumbers(f):
                 print(k,v, type(v))
     return d
 
-def _get_date(f):
+def _get_params(f):
     """
-    takes an open file handle, grabs the date time string, converts to timestamp
-    returns all in Dictionary
-    #TODO actually return timestamp
-    #TODO check date format matches MATLAB code?
+    Takes an open file handle and reads a preset selection of parameters
+    returns in a dictionary
     """
-    d = {}
-    #TODO Actually params section seems to start at 16000, time stamp (label) is at
-    # 16435/16489 but that might be not always the case.
-    # (MATLAB code just searches for Time Stamp plus a regexp of a timestamp)
-    # Could be that 16000 is the known start of the params section and then you
-    # read it in a logical way
-    f.seek(16489)
-    d['Time Stamp'] = f.read(46).partition(b'\x04')[0].decode()
+    STRP = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x10\x11\x12\x13\x14\x15\x16\x17\x18'
 
-    if DEBUG:
-        for k,v in d.items():
-            print(k,v, type(v))
+    def _get_section(dat, section):
+        skip = [b'', b'\n', b'\"', b'\t', b',', b'\r',
+                b'\x0b', b'\x0c', b'\x0e', b'\x0f', b'\x1a', b'\x1c']
+        d = {}
+        part = dat.partition(bytes(section, encoding='utf8'))
+        dat = part[2].lstrip(STRP)
+        try:
+            n = dat[0]
+        except IndexError:
+            raise IndexError("Section not found")
+        dat = dat[1:].split(b'\x00')
+        i = 0
+        for n in range(n):
+            while dat[i].strip(STRP) in skip:
+                i += 1
+            k = dat[i].strip(STRP).decode('utf8', errors='replace')
+            i += 1
+            while dat[i].strip(STRP) in skip:
+                i += 1
+            if dat[i].strip(STRP) in [b'Data', b'PropType']:
+                # Give up, maybe end of section
+                return d
+            else:
+                v = dat[i].strip(STRP).decode('utf8', errors='replace')
+                i += 1
+            d[k] = v
+        return d
+
+    def _get_prop_d(dat, param):
+        part = dat.partition(bytes(param, encoding='utf8'))
+        val_b = part[2].partition(bytes("1.00", encoding='utf8'))[2]
+        val = struct.unpack("d", val_b[12:20])[0]
+        return val
+
+    d = {}
+    f.seek(0)
+    dat = f.read()
+
+    d['Visible Pixel Size'] = _get_prop_d(dat, 'Visible Pixel Size')
+    d['FPA Pixel Size'] = _get_prop_d(dat, 'FPA Pixel Size')
+    d['Rapid Stingray'] = _get_section(dat, 'Rapid Stingray')
+    d['Time Stamp'] = d['Rapid Stingray']['Time Stamp']
 
     return d
+
 
 def _fpa_size(datasize, Npts):
     """
@@ -162,7 +193,7 @@ class agilentImage(DataObject):
         p = p_in.with_suffix(".bsp")
         with p.open(mode='rb') as f:
             self.info.update(_get_wavenumbers(f))
-            self.info.update(_get_date(f))
+            self.info.update(_get_params(f))
 
     def _get_dat(self, p_in):
         p = p_in.with_suffix(".dat")
@@ -216,7 +247,7 @@ class agilentMosaic(DataObject):
         p = p_in.parent.joinpath(p_in.with_suffix(".dmt").name.lower())
         with p.open(mode='rb') as f:
             self.info.update(_get_wavenumbers(f))
-            #self.info.update(_get_date(f)) #TODO hard coding timestamp location was a mistake :)
+            self.info.update(_get_params(f))
 
     def _get_dmd(self, p_in):
         # Determine mosiac dimensions by counting .dmd files
