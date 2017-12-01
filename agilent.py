@@ -189,6 +189,12 @@ class agilentImage(DataObject):
         self._get_bsp_info(p)
         self._get_dat(p)
 
+        self.wavenumbers = self.info['wavenumbers']
+        self.width = self.data.shape[0]
+        self.height = self.data.shape[1]
+        self.filename = p.with_suffix(".bsp").as_posix()
+        self.acqdate = self.info['Time Stamp']
+
     def _get_bsp_info(self, p_in):
         p = p_in.with_suffix(".bsp")
         with p.open(mode='rb') as f:
@@ -241,6 +247,12 @@ class agilentMosaic(DataObject):
         self.MAT = MAT
         self._get_dmt_info(p)
         self._get_dmd(p)
+
+        self.wavenumbers = self.info['wavenumbers']
+        self.width = self.data.shape[0]
+        self.height = self.data.shape[1]
+        self.filename = p.with_suffix(".dms").as_posix()
+        self.acqdate = self.info['Time Stamp']
 
     def _get_dmt_info(self, p_in):
         # .dmt is always lowercase
