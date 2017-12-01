@@ -1,9 +1,10 @@
+__version__ = "0.1"
 from pathlib import Path
 import struct
 
 import numpy as np
 
-DEBUG = True
+DEBUG = False
 
 def _check_files(filename, exts):
     """
@@ -11,7 +12,7 @@ def _check_files(filename, exts):
     returns a Path
     """
     #TODO test whether IOError (deprecated) or OSError is better handled by Orange
-    #TODO I think some filenames are written all lower-case by ResPro: Handle this
+    #TODO Some filenames are written all lower-case by ResPro: Handle this
     # .dmt for sure, done
     p = Path(filename)
     for ext in exts:
@@ -37,12 +38,6 @@ def _get_wavenumbers(f):
     """
     takes an open file handle, grabs the startwavenumber, numberofpoints and step,
     calculates wavenumbers array and returns all in dict
-
-    pyrespro: #TODO
-    dx = spec.Spectrum.PtSep
-    startx = spec.Spectrum.StartPt
-    N = spec.Spectrum.Npts
-    xdata = [dx * (startx + i) for i in range(N)]
     """
     d = {}
     f.seek(2228)
