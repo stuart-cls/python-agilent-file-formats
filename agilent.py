@@ -121,9 +121,9 @@ def _fpa_size(datasize, Npts):
     """
     fpasize = datasize - 255
     fpasize /= Npts
-    fpasize = int(np.sqrt(fpasize))
-    if fpasize not in [32, 64, 128]:
+    if fpasize not in [(2**n)**2 for n in range(1,8)]:
         raise ValueError("Unexpected FPA size: {}".format(fpasize))
+    fpasize = int(np.sqrt(fpasize))
     return fpasize
 
 def _reshape_tile(data, shape):
