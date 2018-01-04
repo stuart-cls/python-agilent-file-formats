@@ -61,7 +61,7 @@ def _get_params(f):
     Takes an open file handle and reads a preset selection of parameters
     returns in a dictionary
     """
-    STRP = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x10\x11\x12\x13\x14\x15\x16\x17\x18'
+    STRP = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15\x16\x17\x18'
 
     def _get_section(dat, section):
         skip = [b'', b'\n', b'\"', b'\t', b',', b'\r',
@@ -97,6 +97,11 @@ def _get_params(f):
         val = struct.unpack("d", val_b[12:20])[0]
         return val
 
+    def _get_prop_str(dat, param):
+        part = dat.partition(bytes(param, encoding='utf8'))
+        val = part[2][:100].lstrip(STRP).split(b'\x00')[0].strip(STRP)
+        return val.decode('utf8', errors='replace')
+
     d = {}
     f.seek(0)
     dat = f.read()
@@ -105,6 +110,10 @@ def _get_params(f):
     d['FPA Pixel Size'] = _get_prop_d(dat, 'FPA Pixel Size')
     d['Rapid Stingray'] = _get_section(dat, 'Rapid Stingray')
     d['Time Stamp'] = d['Rapid Stingray']['Time Stamp']
+    try:
+        d['PixelAggregationSize'] = int(_get_prop_str(dat, 'PixelAggregationSize'))
+    except ValueError:
+        pass
 
     return d
 
