@@ -221,28 +221,9 @@ class agilentImage(DataObject):
         if DEBUG:
             print("FPA Size is {}".format(fpasize))
 
-
-class agilentMosaic(DataObject):
+class agilentMosaicTiles(DataObject):
     """
-    Extracts the spectra from an Agilent mosaic FPA image.
-
-    Attributes beyond .info and .data are provided for consistency with MATLAB code
-
-    Args:
-        filename (str): full path to .dmt file
-        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
-
-    Attributes:
-        info (dict):            Dictionary of acquisition information
-        data (:obj:`ndarray`):  3-dimensional array (height x width x wavenumbers)
-        wavenumbers (list):     Wavenumbers in order of .data array
-        width (int):            Width of mosaic in pixels (rows)
-        height (int):           Width of mosaic in pixels (columns)
-        filename (str):         Full path to .dmt file
-        acqdate (str):          Date and time of acquisition
-
-    Based on agilent-file-formats MATLAB code by Alex Henderson:
-    https://bitbucket.org/AlexHenderson/agilent-file-formats
+    tiles only
     """
 
     def __init__(self, filename, MAT=False):
@@ -251,11 +232,10 @@ class agilentMosaic(DataObject):
         self.MAT = MAT
         self._get_dmt_info(p)
         self._get_tiles(p)
-        self._get_data()
 
         self.wavenumbers = self.info['wavenumbers']
-        self.width = self.data.shape[0]
-        self.height = self.data.shape[1]
+        self.width = self.tiles.shape[0] * self.info['fpasize']
+        self.height = self.tiles.shape[1] * self.info['fpasize']
         self.filename = p.with_suffix(".dmt").as_posix()
         self.acqdate = self.info['Time Stamp']
 
@@ -299,6 +279,34 @@ class agilentMosaic(DataObject):
             tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
             return tile
         return _get_dmd_data
+
+
+class agilentMosaic(agilentMosaicTiles):
+    """
+    Extracts the spectra from an Agilent mosaic FPA image.
+
+    Attributes beyond .info and .data are provided for consistency with MATLAB code
+
+    Args:
+        filename (str): full path to .dmt file
+        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
+
+    Attributes:
+        info (dict):            Dictionary of acquisition information
+        data (:obj:`ndarray`):  3-dimensional array (height x width x wavenumbers)
+        wavenumbers (list):     Wavenumbers in order of .data array
+        width (int):            Width of mosaic in pixels (rows)
+        height (int):           Width of mosaic in pixels (columns)
+        filename (str):         Full path to .dmt file
+        acqdate (str):          Date and time of acquisition
+
+    Based on agilent-file-formats MATLAB code by Alex Henderson:
+    https://bitbucket.org/AlexHenderson/agilent-file-formats
+    """
+
+    def __init__(self, filename, MAT=False):
+        super().__init__(filename, MAT)
+        self._get_data()
 
     def _get_data(self):
         ytiles = self.tiles.shape[0]
