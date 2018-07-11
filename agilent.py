@@ -1,4 +1,4 @@
-__version__ = "0.1"
+__version__ = "0.1.2"
 from pathlib import Path
 import struct
 
@@ -170,7 +170,7 @@ class agilentImage(DataObject):
     Attributes beyond .info and .data are provided for consistency with MATLAB code
 
     Args:
-        filename (str): full path to .seq file
+        filename (str): full path to .dat file
         MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
 
     Attributes:
@@ -188,7 +188,7 @@ class agilentImage(DataObject):
 
     def __init__(self, filename, MAT=False):
         super().__init__()
-        p = _check_files(filename, [".seq", ".dat", ".bsp"])
+        p = _check_files(filename, [".dat", ".bsp"])
         self.MAT = MAT
         self._get_bsp_info(p)
         self._get_dat(p)
@@ -229,7 +229,7 @@ class agilentMosaic(DataObject):
     Attributes beyond .info and .data are provided for consistency with MATLAB code
 
     Args:
-        filename (str): full path to .dms file
+        filename (str): full path to .dmt file
         MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
 
     Attributes:
@@ -238,7 +238,7 @@ class agilentMosaic(DataObject):
         wavenumbers (list):     Wavenumbers in order of .data array
         width (int):            Width of mosaic in pixels (rows)
         height (int):           Width of mosaic in pixels (columns)
-        filename (str):         Full path to .dms file
+        filename (str):         Full path to .dmt file
         acqdate (str):          Date and time of acquisition
 
     Based on agilent-file-formats MATLAB code by Alex Henderson:
@@ -247,7 +247,7 @@ class agilentMosaic(DataObject):
 
     def __init__(self, filename, MAT=False):
         super().__init__()
-        p = _check_files(filename, [".dms", ".dmt", ".drd", ".dmd"])
+        p = _check_files(filename, [".dmt", ".dmd"])
         self.MAT = MAT
         self._get_dmt_info(p)
         self._get_dmd(p)
@@ -255,7 +255,7 @@ class agilentMosaic(DataObject):
         self.wavenumbers = self.info['wavenumbers']
         self.width = self.data.shape[0]
         self.height = self.data.shape[1]
-        self.filename = p.with_suffix(".dms").as_posix()
+        self.filename = p.with_suffix(".dmt").as_posix()
         self.acqdate = self.info['Time Stamp']
 
     def _get_dmt_info(self, p_in):
