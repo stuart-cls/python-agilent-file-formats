@@ -1,4 +1,4 @@
-__version__ = "0.1.2"
+__version__ = "0.2.0-a1"
 from pathlib import Path
 import struct
 
@@ -250,7 +250,8 @@ class agilentMosaic(DataObject):
         p = _check_files(filename, [".dmt", ".dmd"])
         self.MAT = MAT
         self._get_dmt_info(p)
-        self._get_dmd(p)
+        self._get_tiles(p)
+        self._get_data()
 
         self.wavenumbers = self.info['wavenumbers']
         self.width = self.data.shape[0]
@@ -265,7 +266,7 @@ class agilentMosaic(DataObject):
             self.info.update(_get_wavenumbers(f))
             self.info.update(_get_params(f))
 
-    def _get_dmd(self, p_in):
+    def _get_tiles(self, p_in):
         # Determine mosiac dimensions by counting .dmd files
         xtiles = sum(1 for _ in
                 p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.dmd"))
@@ -274,11 +275,7 @@ class agilentMosaic(DataObject):
         # _0000_0000.dmd primary file
         p = p_in.parent.joinpath(p_in.stem + "_0000_0000.dmd")
         Npts = self.info['Npts']
-        fpasize = _fpa_size(p.stat().st_size / 4, Npts)
-        # Allocate array
-        # (rows, columns, wavenumbers)
-        data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
-                        dtype=np.float32)
+        fpasize = self.info['fpasize'] = _fpa_size(p.stat().st_size / 4, Npts)
 
         if DEBUG:
             print("{0} x {1} tiles found".format(xtiles, ytiles))
@@ -287,20 +284,42 @@ class agilentMosaic(DataObject):
                 xtiles*fpasize, ytiles*fpasize, xtiles*ytiles*fpasize**2))
             print(data.shape)
 
-        for y in range(ytiles):
-            for x in range(xtiles):
-                p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
-                with p_dmd.open(mode='rb') as f:
-                    tile = np.fromfile(f, dtype=np.float32)
-                tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
-                if self.MAT:
-                    # Rotate and flip tile to match matplotlib/MATLAB image coordinates
-                    tile = np.flipud(tile)
-                    data[y*fpasize:(y+1)*fpasize, x*fpasize:(x+1)*fpasize, :] = tile
-                else:
-                    # Tile data is in normal cartesian coordinates
-                    # but tile numbering (000x_000y)
-                    # is left-to-right, top-to-bottom (image coordinates)
-                    data[(ytiles-y-1)*fpasize:(ytiles-y)*fpasize, (x)*fpasize:(x+1)*fpasize, :] = tile
+        tiles = np.zeros((ytiles, xtiles), dtype=object)
+        for (x, y) in np.ndindex(tiles.shape):
+            p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
+            tiles[x, y] = self._get_dmd(p_dmd, Npts, fpasize)
+        # import pdb; pdb.set_trace()
+        self.tiles = tiles
+
+    @staticmethod
+    def _get_dmd(p_dmd, Npts, fpasize):
+        def _get_dmd_data(p_dmd=p_dmd):
+            with p_dmd.open(mode='rb') as f:
+                tile = np.fromfile(f, dtype=np.float32)
+            tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
+            return tile
+        return _get_dmd_data
+
+    def _get_data(self):
+        ytiles = self.tiles.shape[0]
+        xtiles = self.tiles.shape[1]
+        Npts = self.info['Npts']
+        fpasize = self.info['fpasize']
+        # Allocate array
+        # (rows, columns, wavenumbers)
+        data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
+                        dtype=np.float32)
+
+        for (x, y) in np.ndindex(self.tiles.shape):
+            tile = self.tiles[x, y]()
+            if self.MAT:
+                # Rotate and flip tile to match matplotlib/MATLAB image coordinates
+                tile = np.flipud(tile)
+                data[y*fpasize:(y+1)*fpasize, x*fpasize:(x+1)*fpasize, :] = tile
+            else:
+                # Tile data is in normal cartesian coordinates
+                # but tile numbering (000x_000y)
+                # is left-to-right, top-to-bottom (image coordinates)
+                data[(ytiles-y-1)*fpasize:(ytiles-y)*fpasize, (x)*fpasize:(x+1)*fpasize, :] = tile
 
         self.data = data
