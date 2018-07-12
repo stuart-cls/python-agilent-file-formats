@@ -1,4 +1,4 @@
-__version__ = "0.2.0-a1"
+__version__ = "0.2.0-a2"
 from pathlib import Path
 import struct
 
@@ -263,7 +263,7 @@ class agilentMosaicTiles(DataObject):
             print("Total dimensions are {0} x {1} or {2} spectra.".format(
                 xtiles*fpasize, ytiles*fpasize, xtiles*ytiles*fpasize**2))
 
-        tiles = np.zeros((ytiles, xtiles), dtype=object)
+        tiles = np.zeros((xtiles, ytiles), dtype=object)
         for (x, y) in np.ndindex(tiles.shape):
             p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
             tiles[x, y] = self._get_dmd(p_dmd, Npts, fpasize)
@@ -308,8 +308,8 @@ class agilentMosaic(agilentMosaicTiles):
         self._get_data()
 
     def _get_data(self):
-        ytiles = self.tiles.shape[0]
-        xtiles = self.tiles.shape[1]
+        xtiles = self.tiles.shape[0]
+        ytiles = self.tiles.shape[1]
         Npts = self.info['Npts']
         fpasize = self.info['fpasize']
         # Allocate array
