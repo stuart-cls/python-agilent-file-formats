@@ -262,7 +262,6 @@ class agilentMosaicTiles(DataObject):
             print("FPA size is {}".format(fpasize))
             print("Total dimensions are {0} x {1} or {2} spectra.".format(
                 xtiles*fpasize, ytiles*fpasize, xtiles*ytiles*fpasize**2))
-            print(data.shape)
 
         tiles = np.zeros((ytiles, xtiles), dtype=object)
         for (x, y) in np.ndindex(tiles.shape):
@@ -317,6 +316,9 @@ class agilentMosaic(agilentMosaicTiles):
         # (rows, columns, wavenumbers)
         data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
                         dtype=np.float32)
+        if DEBUG:
+            print("self.tiles: ", self.tiles.shape)
+            print("self.data: ", data.shape)
 
         for (x, y) in np.ndindex(self.tiles.shape):
             tile = self.tiles[x, y]()
