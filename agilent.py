@@ -1,4 +1,4 @@
-__version__ = "0.2.0-a2"
+__version__ = "0.2.0"
 from pathlib import Path
 import struct
 
@@ -223,7 +223,14 @@ class agilentImage(DataObject):
 
 class agilentMosaicTiles(DataObject):
     """
-    tiles only
+    UNSTABLE API
+
+    This class provides an array of _get_dmd() closures to allow lazy tile-by-tile
+    file loading by consumers.
+
+    The API is not considered stable at this time, so if you are wish to load
+    mosiac files with a stable interface, use agilentMosaic as in previous
+    versions.
     """
 
     def __init__(self, filename, MAT=False):
@@ -267,7 +274,6 @@ class agilentMosaicTiles(DataObject):
         for (x, y) in np.ndindex(tiles.shape):
             p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
             tiles[x, y] = self._get_dmd(p_dmd, Npts, fpasize)
-        # import pdb; pdb.set_trace()
         self.tiles = tiles
 
     @staticmethod
