@@ -1,4 +1,4 @@
-__version__ = "0.2.0"
+__version__ = "0.3.0-a1"
 from pathlib import Path
 import struct
 
@@ -115,6 +115,30 @@ def _get_params(f):
     except ValueError:
         pass
 
+    return d
+
+def _get_ifg_params(f):
+    """
+    Takes an open file handle and reads a preset selection of parameters
+    returns in a dictionary
+    """
+    def _get_proptype_data(dat, param):
+        part = dat.partition(bytes(param, encoding='utf8'))
+        val_b = part[2].partition(bytes("1.00", encoding='utf8'))[2]
+        PtSep = struct.unpack("d", val_b[12:20])[0]
+        StartPt = struct.unpack("i", val_b[24:28])[0]
+        Npts = struct.unpack("i", val_b[32:36])[0]
+        return PtSep, StartPt, Npts
+
+    d = {}
+    f.seek(0)
+    dat = f.read()
+
+    d['PtSep'], d['StartPt'], d['Npts'] = _get_proptype_data(dat, 'Interferogram')
+
+    if DEBUG:
+        for k,v in d.items():
+            print(k,v, type(v))
     return d
 
 
@@ -339,3 +363,48 @@ class agilentMosaic(agilentMosaicTiles):
                 data[(ytiles-y-1)*fpasize:(ytiles-y)*fpasize, (x)*fpasize:(x+1)*fpasize, :] = tile
 
         self.data = data
+
+class agilentImageIFG(DataObject):
+    """
+    Extracts the interferograms from an Agilent single tile FPA image.
+
+    Args:
+        filename (str): full path to .seq file
+        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
+
+    Attributes:
+        info (dict):            Dictionary of acquisition information
+        data (:obj:`ndarray`):  3-dimensional array (height x width x wavenumbers)
+        filename (str):         Full path to .bsp file
+    """
+
+    def __init__(self, filename, MAT=False):
+        super().__init__()
+        p = _check_files(filename, [".seq", ".bsp"])
+        self.MAT = MAT
+        self._get_bsp_info(p)
+        self._get_seq(p)
+
+        self.filename = p.with_suffix(".bsp").as_posix()
+
+    def _get_bsp_info(self, p_in):
+        p = p_in.with_suffix(".bsp")
+        with p.open(mode='rb') as f:
+            self.info.update(_get_ifg_params(f))
+            # self.info.update(_get_params(f))
+
+    def _get_seq(self, p_in):
+        p = p_in.with_suffix(".seq")
+        with p.open(mode='rb') as f:
+            data = np.fromfile(f, dtype=np.float32)
+        fpasize = _fpa_size(data.size, self.info['Npts'])
+        data = _reshape_tile(data, (self.info['Npts'], fpasize, fpasize))
+
+        if self.MAT:
+            # Rotate and flip tile to match matplotlib/MATLAB image coordinates
+            data = np.flipud(data)
+
+        self.data = data
+
+        if DEBUG:
+            print("FPA Size is {}".format(fpasize))
