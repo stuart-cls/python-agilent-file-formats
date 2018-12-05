@@ -1,4 +1,4 @@
-__version__ = "0.3.0-a1"
+__version__ = "0.3.0-a2"
 from pathlib import Path
 import struct
 
@@ -409,3 +409,110 @@ class agilentImageIFG(DataObject):
 
         if DEBUG:
             print("FPA Size is {}".format(fpasize))
+
+
+class agilentMosaicIFGTiles(DataObject):
+    """
+    UNSTABLE API
+
+    This class provides an array of _get_drd() closures to allow lazy tile-by-tile
+    file loading by consumers.
+
+    The API is not considered stable at this time, so if you are wish to load
+    mosiac files with a stable interface, use agilentMosaic as in previous
+    versions.
+    """
+
+    def __init__(self, filename, MAT=False):
+        super().__init__()
+        p = _check_files(filename, [".dmt", ".drd"])
+        self.MAT = MAT
+        self._get_dmt_info(p)
+        self._get_tiles(p)
+
+        self.filename = p.with_suffix(".dmt").as_posix()
+
+    def _get_dmt_info(self, p_in):
+        # .dmt is always lowercase
+        p = p_in.parent.joinpath(p_in.with_suffix(".dmt").name.lower())
+        with p.open(mode='rb') as f:
+            self.info.update(_get_ifg_params(f))
+            self.info.update(_get_params(f))
+
+    def _get_tiles(self, p_in):
+        # Determine mosiac dimensions by counting .drd files
+        xtiles = sum(1 for _ in
+                p_in.parent.glob(p_in.stem + "_[0-9][0-9][0-9][0-9]_0000.drd"))
+        ytiles = sum(1 for _ in
+                p_in.parent.glob(p_in.stem + "_0000_[0-9][0-9][0-9][0-9].drd"))
+        # _0000_0000.drd primary file
+        p = p_in.parent.joinpath(p_in.stem + "_0000_0000.drd")
+        Npts = self.info['Npts']
+        fpasize = self.info['fpasize'] = _fpa_size(p.stat().st_size / 4, Npts)
+
+        if DEBUG:
+            print("{0} x {1} tiles found".format(xtiles, ytiles))
+            print("FPA size is {}".format(fpasize))
+            print("Total dimensions are {0} x {1} or {2} spectra.".format(
+                xtiles*fpasize, ytiles*fpasize, xtiles*ytiles*fpasize**2))
+
+        tiles = np.zeros((xtiles, ytiles), dtype=object)
+        for (x, y) in np.ndindex(tiles.shape):
+            p_drd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.drd".format(x,y))
+            tiles[x, y] = self._get_drd(p_drd, Npts, fpasize)
+        self.tiles = tiles
+
+    @staticmethod
+    def _get_drd(p_drd, Npts, fpasize):
+        def _get_drd_data(p_drd=p_drd):
+            with p_drd.open(mode='rb') as f:
+                tile = np.fromfile(f, dtype=np.float32)
+            tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
+            return tile
+        return _get_drd_data
+
+
+class agilentMosaicIFG(agilentMosaicIFGTiles):
+    """
+    Extracts the interferograms from an Agilent mosaic FPA image.
+
+    Args:
+        filename (str): full path to .dmt file
+        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
+
+    Attributes:
+        info (dict):            Dictionary of acquisition information
+        data (:obj:`ndarray`):  3-dimensional array (height x width x wavenumbers)
+        filename (str):         Full path to .dmt file
+    """
+
+    def __init__(self, filename, MAT=False):
+        super().__init__(filename, MAT)
+        self._get_data()
+
+    def _get_data(self):
+        xtiles = self.tiles.shape[0]
+        ytiles = self.tiles.shape[1]
+        Npts = self.info['Npts']
+        fpasize = self.info['fpasize']
+        # Allocate array
+        # (rows, columns, wavenumbers)
+        data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
+                        dtype=np.float32)
+        if DEBUG:
+            print("self.tiles: ", self.tiles.shape)
+            print("self.data: ", data.shape)
+
+        for (x, y) in np.ndindex(self.tiles.shape):
+            tile = self.tiles[x, y]()
+            if self.MAT:
+                # Rotate and flip tile to match matplotlib/MATLAB image coordinates
+                tile = np.flipud(tile)
+                data[y*fpasize:(y+1)*fpasize, x*fpasize:(x+1)*fpasize, :] = tile
+            else:
+                # Tile data is in normal cartesian coordinates
+                # but tile numbering (000x_000y)
+                # is left-to-right, top-to-bottom (image coordinates)
+                data[(ytiles-y-1)*fpasize:(ytiles-y)*fpasize, (x)*fpasize:(x+1)*fpasize, :] = tile
+
+        self.data = data
