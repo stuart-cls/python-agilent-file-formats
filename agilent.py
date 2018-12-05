@@ -364,6 +364,7 @@ class agilentMosaic(agilentMosaicTiles):
 
         self.data = data
 
+
 class agilentImageIFG(DataObject):
     """
     Extracts the interferograms from an Agilent single tile FPA image.
@@ -391,7 +392,7 @@ class agilentImageIFG(DataObject):
         p = p_in.with_suffix(".bsp")
         with p.open(mode='rb') as f:
             self.info.update(_get_ifg_params(f))
-            # self.info.update(_get_params(f))
+            self.info.update(_get_params(f))
 
     def _get_seq(self, p_in):
         p = p_in.with_suffix(".seq")
