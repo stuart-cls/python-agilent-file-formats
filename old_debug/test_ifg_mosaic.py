@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from agilent import agilentMosaicIFG
+from agilent_format import agilentMosaicIFG
 
-PLOTS = False
+PLOTS = True
 ATTRS = False
 
 filename = ["var/2018-01-02 Small Test File/5_mosaic_noimage_agg1024/5_mosaic_agg1024.dmt"]
