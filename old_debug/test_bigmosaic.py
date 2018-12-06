@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 
-from agilent import agilentImage, agilentMosaic
+from agilent_format import agilentImage, agilentMosaic
 
 am = agilentMosaic("/data/staff/reads/USAF 25X Mosaic/USAF 25X Mosaic.dms", MAT=False)
 print(am.data.shape)

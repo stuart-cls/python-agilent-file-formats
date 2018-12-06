@@ -1,4 +1,4 @@
-from agilent import agilentImage, agilentMosaic
+from agilent_format import agilentImage, agilentMosaic
 
 ai = agilentImage("var/fpa_refl_vi.pb.seq", MAT=False)
 am = agilentMosaic("var/2017-11-10 4X-25X/2017-11-10 4X-25X.dms", MAT=False)

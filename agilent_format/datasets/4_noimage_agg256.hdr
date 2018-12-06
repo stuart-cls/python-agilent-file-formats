@@ -1,0 +1,24 @@
+ENVI
+description = {
+  IR Image }
+samples = 8
+lines   = 8
+bands   = 9
+header offset = 1020
+file type = ENVI Standard
+data type = 4
+interleave = bsq
+sensor type = Unknown
+byte order = 0
+default stretch = 5.0% linear
+wavelength = {
+ 1990.17823,
+ 2005.60596,
+ 2021.03370,
+ 2036.46144,
+ 2051.88918,
+ 2067.31692,
+ 2082.74466,
+ 2098.17239,
+ 2113.60013
+}

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 
-from agilent import agilentImage, agilentMosaic
+from agilent_format import agilentImage, agilentMosaic
 
 ai = agilentImage("var/fpa_refl_vi.pb.seq", MAT=False)
 print(ai.data.shape)
