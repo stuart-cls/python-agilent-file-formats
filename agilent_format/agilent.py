@@ -1,4 +1,4 @@
-__version__ = "0.3.0-a3"
+__version__ = "0.3.0-a4"
 from pathlib import Path
 import struct
 
@@ -98,8 +98,9 @@ def _get_params(f):
         return val
 
     def _get_prop_str(dat, param):
-        part = dat.partition(bytes(param, encoding='utf8'))
-        val = part[2][:100].lstrip(STRP).split(b'\x00')[0].strip(STRP)
+        b_param = b'\x00' + bytes(param, encoding='utf8') + b'\x04'
+        part = dat.partition(b_param)
+        val = part[2][:100].lstrip(STRP + b'\n').split(b'\x00')[0].strip(STRP)
         return val.decode('utf8', errors='replace')
 
     d = {}
@@ -110,10 +111,29 @@ def _get_params(f):
     d['FPA Pixel Size'] = _get_prop_d(dat, 'FPA Pixel Size')
     d['Rapid Stingray'] = _get_section(dat, 'Rapid Stingray')
     d['Time Stamp'] = d['Rapid Stingray']['Time Stamp']
-    try:
-        d['PixelAggregationSize'] = int(_get_prop_str(dat, 'PixelAggregationSize'))
-    except ValueError:
-        pass
+
+    k_int = ['PixelAggregationSize',
+             'Resolution',
+             'Under Sampling Ratio',
+    ]
+    for k in k_int:
+        try:
+            d[k] = int(_get_prop_str(dat, k))
+        except ValueError:
+            pass
+
+    k_float = ['Effective Laser Wavenumber',
+    ]
+    for k in k_float:
+        try:
+            d[k] = float(_get_prop_str(dat, k))
+        except ValueError as e:
+            pass
+
+    k_str = ['Symmetry',
+    ]
+    for k in k_str:
+        d[k] = _get_prop_str(dat, k)
 
     return d
 

@@ -4,28 +4,16 @@ from agilent_format import agilentImageIFG
 
 class TestImageIFG(unittest.TestCase):
 
-    @staticmethod
-    def shared_info(aifg):
-        assert aifg.data.shape == (8, 8, 311)
-        assert aifg.info['Npts'] == 311
-        assert aifg.info['StartPt'] == -68
-        assert aifg.info['PtSep'] == float(0.00012659827227975054)
-        assert aifg.info['Rapid Stingray']['Effective Laser Wavenumber'] == "15798.0039"
-        assert aifg.info['Rapid Stingray']['Resolution'] == "32"
-        try:
-            assert aifg.info['Rapid Stingray']['Symmetry'] == "ASYM"
-        except KeyError:
-            print("TODO No \'Symmetry\' key in " + aifg.filename)
-        try:
-            assert aifg.info['Rapid Stingray']['Under Sampling Ratio'] == "4"
-        except KeyError:
-            print("TODO No \'Under Sampling Ratio\' key in " + aifg.filename)
-        try:
-            assert aifg.info['PixelAggregationSize'] == 16
-        except KeyError:
-            print("TODO No \'PixelAggregationSize\' key in " + aifg.filename)
-        except AssertionError:
-            print("TODO Incorrect \'PixelAggregationSize\' {0} in {1}".format(aifg.info['PixelAggregationSize'], aifg.filename))
+    def shared_info(self, aifg):
+        self.assertEqual(aifg.data.shape, (8, 8, 311))
+        self.assertEqual(aifg.info['Npts'], 311)
+        self.assertEqual(aifg.info['StartPt'], -68)
+        self.assertEqual(aifg.info['PtSep'], float(0.00012659827227975054))
+        self.assertEqual(aifg.info['Effective Laser Wavenumber'], 15798.0039)
+        self.assertEqual(aifg.info['Resolution'], 32)
+        self.assertEqual(aifg.info['Symmetry'], "ASYM")
+        self.assertEqual(aifg.info['Under Sampling Ratio'], 4)
+        self.assertEqual(aifg.info['PixelAggregationSize'], 16)
 
     def test_load_ifg_sample(self):
         f = "agilent_format/datasets/4_noimage_agg256.seq"

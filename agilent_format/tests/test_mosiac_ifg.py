@@ -12,16 +12,10 @@ class TestMosaicIFG(unittest.TestCase):
         assert aifg.info['Npts'] == 311
         assert aifg.info['StartPt'] == -68
         assert aifg.info['PtSep'] == float(0.00012659827227975054)
-        assert aifg.info['Rapid Stingray']['Effective Laser Wavenumber'] == "15798.0039"
-        assert aifg.info['Rapid Stingray']['Resolution'] == "32"
-        try:
-            assert aifg.info['Rapid Stingray']['Symmetry'] == "ASYM"
-        except KeyError:
-            print("TODO No \'Symmetry\' key in " + aifg.filename)
-        try:
-            assert aifg.info['Rapid Stingray']['Under Sampling Ratio'] == "4"
-        except KeyError:
-            print("TODO No \'Under Sampling Ratio\' key in " + aifg.filename)
+        assert aifg.info['Effective Laser Wavenumber'] == 15798.0039
+        assert aifg.info['Resolution'] == 32
+        assert aifg.info['Symmetry'] == "ASYM"
+        assert aifg.info['Under Sampling Ratio'] == 4
         assert aifg.info['PixelAggregationSize'] == 32
         # Confirm image orientation
         self.assertAlmostEqual(aifg.data[5, 1, 0], 0.7116039)

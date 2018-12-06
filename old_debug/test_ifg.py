@@ -4,10 +4,10 @@ import matplotlib.image as mpimg
 from agilent_format import agilentImageIFG
 
 PLOTS = False
-ATTRS = False
+ATTRS = True
 
 filename = ["var/2018-01-02 Small Test File/4_noimage_agg256.bsp"]
-filename += ["var/2018-01-02 Small Test File/background_agg256.bsp"]
+# filename += ["var/2018-01-02 Small Test File/background_agg256.bsp"]
 
 for f in filename:
     aifg = agilentImageIFG(f)
@@ -27,27 +27,16 @@ for f in filename:
     assert aifg.info['Npts'] == 311
     assert aifg.info['StartPt'] == -68
     assert aifg.info['PtSep'] == float(0.00012659827227975054)
-    assert aifg.info['Rapid Stingray']['Effective Laser Wavenumber'] == "15798.0039"
-    assert aifg.info['Rapid Stingray']['Resolution'] == "32"
-    try:
-        assert aifg.info['Rapid Stingray']['Symmetry'] == "ASYM"
-    except KeyError:
-        print("No \'Symmetry\' key in " + aifg.filename)
-    try:
-        assert aifg.info['Rapid Stingray']['Under Sampling Ratio'] == "4"
-    except KeyError:
-        print("No \'Under Sampling Ratio\' key in " + aifg.filename)
-    try:
-        assert aifg.info['PixelAggregationSize'] == 16
-    except KeyError:
-        print("No \'PixelAggregationSize\' key in " + aifg.filename)
-    except AssertionError:
-        print("Incorrect \'PixelAggregationSize\' {0} in {1}".format(aifg.info['PixelAggregationSize'], aifg.filename))
+    assert aifg.info['Effective Laser Wavenumber'] == 15798.0039
+    assert aifg.info['Resolution'] == 32
+    assert aifg.info['Symmetry'] == "ASYM"
+    assert aifg.info['Under Sampling Ratio'] == 4
+    assert aifg.info['PixelAggregationSize'] == 16
 
 if ATTRS:
     for k,v in aifg.info.items():
         if k == "Rapid Stingray":
             for k, v, in v.items():
-                print(k,v, type(v))
+                print(k, "|", v, "|", type(v))
         else:
-            print(k,v, type(v))
+            print(k, "|", v, "|", type(v))
