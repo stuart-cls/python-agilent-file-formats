@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from agilent import agilentImageIFG
+from agilent_format import agilentImageIFG
 
 PLOTS = False
 ATTRS = False
