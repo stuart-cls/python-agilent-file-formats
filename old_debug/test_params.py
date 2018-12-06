@@ -1,6 +1,6 @@
 import struct
 
-from agilent import _get_params
+from agilent_format import _get_params
 
 filename = "var/2017-11-10 4X-25X/2017-11-10 4x-25x.dmt"
 #filename = "var/2017-11-10 4X-25X/2017-11-10 4x-25x.bsp"

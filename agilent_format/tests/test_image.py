@@ -17,6 +17,11 @@ class TestImage(unittest.TestCase):
         self.assertEqual(ai.data.shape, (8, 8, Npts))
         self.assertEqual(ai.info['FPA Pixel Size'], 5.5)
         self.assertEqual(ai.info['PixelAggregationSize'], 16)
+        self.assertEqual(ai.width, ai.data.shape[0])
+        self.assertEqual(ai.height, ai.data.shape[1])
+        f_bsp = f.rsplit(".")[0] + ".bsp"
+        self.assertEqual(ai.filename, f_bsp)
+        self.assertEqual(ai.acqdate, "Tuesday, January 02, 2018 14:01:52")
         # Confirm image orientation
         self.assertAlmostEqual(ai.data[0, 1, 1], 1.27181053)
         self.assertAlmostEqual(ai.data[0, 2, 2], 1.27506005)
