@@ -1,4 +1,4 @@
-__version__ = "0.3.0-a4"
+__version__ = "0.3.0"
 from pathlib import Path
 import struct
 

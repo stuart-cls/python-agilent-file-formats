@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="agilent_format",
-    version="0.3.0-a3",
+    version="0.3.0",
     author="Stuart Read",
     author_email="stuart.read@lightsource.ca",
     description="File reader for Agilent Resolutions Pro FT-IR images",
