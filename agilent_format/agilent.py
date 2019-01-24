@@ -1,4 +1,4 @@
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 from pathlib import Path
 import struct
 
@@ -12,9 +12,17 @@ def _check_files(filename, exts):
     returns a Path
     """
     #TODO test whether IOError (deprecated) or OSError is better handled by Orange
-    #TODO Some filenames are written all lower-case by ResPro: Handle this
-    # .dmt for sure, done
     p = Path(filename)
+    if p.suffix == ".dmt":
+        for child in p.parent.iterdir():
+            if child.suffix == ".dmt":
+                continue
+            elif child.stem.casefold() == p.stem.casefold():
+                p = child
+                break
+            elif child.stem.casefold() == (p.stem + "_0000_0000").casefold():
+                p = child.with_name(child.stem.split("_0000_0000")[0] + p.suffix)
+                break
     for ext in exts:
         if ext == ".dmt":
             # Always lowercase
