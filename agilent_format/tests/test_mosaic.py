@@ -1,5 +1,7 @@
 import unittest
 
+from numpy import float64
+
 from agilent_format import agilentMosaic
 
 class TestMosaic(unittest.TestCase):
@@ -29,3 +31,8 @@ class TestMosaic(unittest.TestCase):
         self.assertAlmostEqual(ai.data[7, 1, 1], 1.14792180)
         self.assertAlmostEqual(ai.data[7, 2, 2], 1.14063489)
         self.assertAlmostEqual(ai.data[6, 2, 3], 0.28298783)
+
+    def test_load_mosaic_64(self):
+        f = "agilent_format/datasets/5_mosaic_agg1024.dmt"
+        ai = agilentMosaic(f, MAT=False, dtype=float64)
+        self.assertAlmostEqual(ai.data[1, 2, 3], 0.28298783)

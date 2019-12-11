@@ -1,5 +1,7 @@
 import unittest
 
+from numpy import float64
+
 from agilent_format import agilentMosaicIFG
 
 class TestMosaicIFG(unittest.TestCase):
@@ -27,3 +29,8 @@ class TestMosaicIFG(unittest.TestCase):
         # Confirm image orientation
         self.assertAlmostEqual(aifg.data[5, 1, 0], 0.52554786)
         self.assertAlmostEqual(aifg.data[6, 2, 0], 0.7433825)
+
+    def test_load_ifg_mosaic_64(self):
+        f = "agilent_format/datasets/5_mosaic_agg1024.dmt"
+        aifg = agilentMosaicIFG(f, MAT=False, dtype=float64)
+        self.assertAlmostEqual(aifg.data[5, 1, 0], 0.7116039)

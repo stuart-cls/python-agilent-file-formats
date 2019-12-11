@@ -1,4 +1,4 @@
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 from pathlib import Path
 import struct
 
@@ -345,8 +345,9 @@ class agilentMosaic(agilentMosaicTiles):
     Attributes beyond .info and .data are provided for consistency with MATLAB code
 
     Args:
-        filename (str): full path to .dmt file
-        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
+        filename (str):   full path to .dmt file
+        MAT (bool):       Output array using image coordinates (matplotlib/MATLAB)
+        dtype (np.dtype): Set dtype of output array (float32 or float64)
 
     Attributes:
         info (dict):            Dictionary of acquisition information
@@ -361,8 +362,9 @@ class agilentMosaic(agilentMosaicTiles):
     https://bitbucket.org/AlexHenderson/agilent-file-formats
     """
 
-    def __init__(self, filename, MAT=False):
+    def __init__(self, filename, MAT=False, dtype=np.float32):
         super().__init__(filename, MAT)
+        self.dtype = dtype
         self._get_data()
 
     def _get_data(self):
@@ -373,7 +375,7 @@ class agilentMosaic(agilentMosaicTiles):
         # Allocate array
         # (rows, columns, wavenumbers)
         data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
-                        dtype=np.float32)
+                        dtype=self.dtype)
         if DEBUG:
             print("self.tiles: ", self.tiles.shape)
             print("self.data: ", data.shape)
@@ -505,8 +507,9 @@ class agilentMosaicIFG(agilentMosaicIFGTiles):
     Extracts the interferograms from an Agilent mosaic FPA image.
 
     Args:
-        filename (str): full path to .dmt file
-        MAT (bool):     Output array using image coordinates (matplotlib/MATLAB)
+        filename (str):   full path to .dmt file
+        MAT (bool):       Output array using image coordinates (matplotlib/MATLAB)
+        dtype (np.dtype): Set dtype of output array (float32 or float64))
 
     Attributes:
         info (dict):            Dictionary of acquisition information
@@ -514,8 +517,9 @@ class agilentMosaicIFG(agilentMosaicIFGTiles):
         filename (str):         Full path to .dmt file
     """
 
-    def __init__(self, filename, MAT=False):
+    def __init__(self, filename, MAT=False, dtype=np.float32):
         super().__init__(filename, MAT)
+        self.dtype = dtype
         self._get_data()
 
     def _get_data(self):
@@ -526,7 +530,7 @@ class agilentMosaicIFG(agilentMosaicIFGTiles):
         # Allocate array
         # (rows, columns, wavenumbers)
         data = np.zeros((ytiles*fpasize, xtiles*fpasize, Npts),
-                        dtype=np.float32)
+                        dtype=self.dtype)
         if DEBUG:
             print("self.tiles: ", self.tiles.shape)
             print("self.data: ", data.shape)
