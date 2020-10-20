@@ -1,4 +1,6 @@
-__version__ = "0.3.2"
+__version__ = "0.4.0"
+
+import configparser
 from pathlib import Path
 import struct
 
@@ -200,6 +202,61 @@ def _reshape_tile(data, shape):
     return data
 
 
+def get_visible_images(p):
+    """
+    Takes a Path to the datafile and returns a list of visible images.
+
+    This only works for Mosaic datasets with "IRCutout.bmp" or "VisMosaicCollectImages_Thumbnail.bmp"
+
+    Each item is a dict with at least:
+      'name':           IR Cutout or Entire Image
+      'image_bytes'     Image Bytes()
+      'pos_x'           Bottom-left corner, x (microns)
+      'pos_y'           Bottom-left corner, y (microns)
+      'img_size_x'      Width of image (microns)
+      'img_size_y'      Height of image (microns)
+    """
+    visible_images = []
+
+    config_ir = configparser.ConfigParser()
+    config_ir.read(p.parent.joinpath("IRMosaicInfo.cfg"))
+    config_vis = configparser.ConfigParser()
+    config_vis.read(p.parent.joinpath("VisMosaicInfo.cfg"))
+
+    cutout_path = p.parent.joinpath("IrCutout.bmp")
+    if cutout_path.is_file() and config_ir.has_section('MicronMeasurements'):
+        with open(cutout_path, mode='rb') as file:
+            img_bytes = file.read()
+
+        d = {'name': "IR Cutout",
+             'image_bytes': img_bytes,
+             'pos_x': 0,
+             'pos_y': 0,
+             'img_size_x': float(config_ir['MicronMeasurements']['IrCollectWidthMicrons']),
+             'img_size_y': float(config_ir['MicronMeasurements']['IrCollectHeightMicrons']),
+             }
+        visible_images.append(d)
+
+    full_img_path = p.parent.joinpath("VisMosaicCollectImages_Thumbnail.bmp")
+    if full_img_path.is_file() and config_ir.has_section('MicronMeasurements') \
+            and config_vis.has_section('VisMosaicDefinition'):
+        with open(full_img_path, mode='rb') as file:
+            img_bytes = file.read()
+
+        d = {'name': "Entire Image",
+             'image_bytes': img_bytes,
+             'pos_x': -1 * float(config_ir['MicronMeasurements']['IrCollectStartLocationMicronsX']),
+             'pos_y': float(config_ir['MicronMeasurements']['IrCollectStartLocationMicronsY'])
+                      + float(config_ir['MicronMeasurements']['IrCollectHeightMicrons'])
+                      - float(config_vis['VisMosaicDefinition']['MosaicSizeMicronsY']),
+             'img_size_x': float(config_vis['VisMosaicDefinition']['MosaicSizeMicronsX']),
+             'img_size_y': float(config_vis['VisMosaicDefinition']['MosaicSizeMicronsY']),
+             }
+        visible_images.append(d)
+
+    return visible_images
+
+
 class DataObject(object):
     """
     Simple container of a data array and information about that array.
@@ -297,6 +354,8 @@ class agilentMosaicTiles(DataObject):
         self.height = self.tiles.shape[1] * self.info['fpasize']
         self.filename = p.with_suffix(".dmt").as_posix()
         self.acqdate = self.info['Time Stamp']
+
+        self.vis = get_visible_images(p)
 
     def _get_dmt_info(self, p_in):
         # .dmt is always lowercase
