@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 import configparser
 from pathlib import Path
@@ -218,13 +218,12 @@ def get_visible_images(p):
     """
     visible_images = []
 
-    config_ir = configparser.ConfigParser()
-    config_ir.read(p.parent.joinpath("IRMosaicInfo.cfg"))
-    config_vis = configparser.ConfigParser()
-    config_vis.read(p.parent.joinpath("VisMosaicInfo.cfg"))
+    config = configparser.ConfigParser()
+    config.read(p.parent.joinpath("IRMosaicInfo.cfg"))
+    config.read(p.parent.joinpath("VisMosaicInfo.cfg"))
 
     cutout_path = p.parent.joinpath("IrCutout.bmp")
-    if cutout_path.is_file() and config_ir.has_section('MicronMeasurements'):
+    if cutout_path.is_file() and config.has_section('MicronMeasurements'):
         with open(cutout_path, mode='rb') as file:
             img_bytes = file.read()
 
@@ -232,25 +231,25 @@ def get_visible_images(p):
              'image_bytes': img_bytes,
              'pos_x': 0,
              'pos_y': 0,
-             'img_size_x': float(config_ir['MicronMeasurements']['IrCollectWidthMicrons']),
-             'img_size_y': float(config_ir['MicronMeasurements']['IrCollectHeightMicrons']),
+             'img_size_x': float(config['MicronMeasurements']['IrCollectWidthMicrons']),
+             'img_size_y': float(config['MicronMeasurements']['IrCollectHeightMicrons']),
              }
         visible_images.append(d)
 
     full_img_path = p.parent.joinpath("VisMosaicCollectImages_Thumbnail.bmp")
-    if full_img_path.is_file() and config_ir.has_section('MicronMeasurements') \
-            and config_vis.has_section('VisMosaicDefinition'):
+    if full_img_path.is_file() and config.has_section('MicronMeasurements') \
+            and config.has_section('VisMosaicDefinition'):
         with open(full_img_path, mode='rb') as file:
             img_bytes = file.read()
 
         d = {'name': "Entire Image",
              'image_bytes': img_bytes,
-             'pos_x': -1 * float(config_ir['MicronMeasurements']['IrCollectStartLocationMicronsX']),
-             'pos_y': float(config_ir['MicronMeasurements']['IrCollectStartLocationMicronsY'])
-                      + float(config_ir['MicronMeasurements']['IrCollectHeightMicrons'])
-                      - float(config_vis['VisMosaicDefinition']['MosaicSizeMicronsY']),
-             'img_size_x': float(config_vis['VisMosaicDefinition']['MosaicSizeMicronsX']),
-             'img_size_y': float(config_vis['VisMosaicDefinition']['MosaicSizeMicronsY']),
+             'pos_x': -1 * float(config['MicronMeasurements']['IrCollectStartLocationMicronsX']),
+             'pos_y': float(config['MicronMeasurements']['IrCollectStartLocationMicronsY'])
+                      + float(config['MicronMeasurements']['IrCollectHeightMicrons'])
+                      - float(config['VisMosaicDefinition']['MosaicSizeMicronsY']),
+             'img_size_x': float(config['VisMosaicDefinition']['MosaicSizeMicronsX']),
+             'img_size_y': float(config['VisMosaicDefinition']['MosaicSizeMicronsY']),
              }
         visible_images.append(d)
 
