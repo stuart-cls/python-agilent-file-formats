@@ -1,4 +1,4 @@
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 import configparser
 from pathlib import Path
@@ -210,7 +210,7 @@ def get_visible_images(p):
 
     Each item is a dict with at least:
       'name':           IR Cutout or Entire Image
-      'image_bytes'     Image Bytes()
+      'image_ref'       Path to image file
       'pos_x'           Bottom-left corner, x (microns)
       'pos_y'           Bottom-left corner, y (microns)
       'img_size_x'      Width of image (microns)
@@ -224,11 +224,8 @@ def get_visible_images(p):
 
     cutout_path = p.parent.joinpath("IrCutout.bmp")
     if cutout_path.is_file() and config.has_section('MicronMeasurements'):
-        with open(cutout_path, mode='rb') as file:
-            img_bytes = file.read()
-
         d = {'name': "IR Cutout",
-             'image_bytes': img_bytes,
+             'image_ref': cutout_path,
              'pos_x': 0,
              'pos_y': 0,
              'img_size_x': float(config['MicronMeasurements']['IrCollectWidthMicrons']),
@@ -239,11 +236,8 @@ def get_visible_images(p):
     full_img_path = p.parent.joinpath("VisMosaicCollectImages_Thumbnail.bmp")
     if full_img_path.is_file() and config.has_section('MicronMeasurements') \
             and config.has_section('VisMosaicDefinition'):
-        with open(full_img_path, mode='rb') as file:
-            img_bytes = file.read()
-
         d = {'name': "Entire Image",
-             'image_bytes': img_bytes,
+             'image_ref': full_img_path,
              'pos_x': -1 * float(config['MicronMeasurements']['IrCollectStartLocationMicronsX']),
              'pos_y': float(config['MicronMeasurements']['IrCollectStartLocationMicronsY'])
                       + float(config['MicronMeasurements']['IrCollectHeightMicrons'])
