@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="agilent_format",
-    version="0.3.1",
+    name="agilent-format",
+    version="0.4.2",
     author="Stuart Read",
     author_email="stuart.read@lightsource.ca",
     description="File reader for Agilent Resolutions Pro FT-IR images",
