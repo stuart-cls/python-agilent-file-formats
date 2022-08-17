@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from numpy import float64
 
@@ -36,3 +37,22 @@ class TestMosaic(unittest.TestCase):
         f = "agilent_format/datasets/5_mosaic_agg1024.dmt"
         ai = agilentMosaic(f, MAT=False, dtype=float64)
         self.assertAlmostEqual(ai.data[1, 2, 3], 0.28298783)
+
+    def test_load_mosaic_vis(self):
+        f = "agilent_format/datasets/5_mosaic_agg1024.dmt"
+        ai = agilentMosaic(f, MAT=False)
+        self.assertEqual(len(ai.vis), 2)
+        self.assertDictEqual(ai.vis[0],
+                             {'name': "IR Cutout",
+                              'image_ref': Path(f).parent.joinpath("IrCutout.bmp"),
+                              'pos_x': 0,
+                              'pos_y': 0,
+                              'img_size_x': 701.0,
+                              'img_size_y': 1444.0,})
+        self.assertDictEqual(ai.vis[1],
+                             {'name': "Entire Image",
+                              'image_ref': Path(f).parent.joinpath("VisMosaicCollectImages_Thumbnail.bmp"),
+                              'pos_x': -204.400785854617,
+                              'pos_y': -201.8752228163994,
+                              'img_size_x': 1530.0,
+                              'img_size_y': 1688.0,})

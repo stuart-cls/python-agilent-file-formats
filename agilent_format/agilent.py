@@ -1,4 +1,4 @@
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 import configparser
 from pathlib import Path
@@ -219,7 +219,7 @@ def get_visible_images(p):
     visible_images = []
 
     config = configparser.ConfigParser()
-    config.read(p.parent.joinpath("IRMosaicInfo.cfg"))
+    config.read(p.parent.joinpath("IrMosaicInfo.cfg"))
     config.read(p.parent.joinpath("VisMosaicInfo.cfg"))
 
     cutout_path = p.parent.joinpath("IrCutout.bmp")
