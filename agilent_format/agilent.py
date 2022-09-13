@@ -8,20 +8,28 @@ import numpy as np
 
 DEBUG = False
 
-def _check_files(filename, exts):
+def base_data_path(path: Path) -> Path:
+    """
+    Find the correct base for data files
+
+    For example, folder with ["ab9.dmt", "AB9_0000_0000.dmd"] should return "AB9"
+    """
+    if path.suffix == ".dmt":
+        for child in path.parent.iterdir():
+            if child.suffix == ".dmt":
+                continue
+            elif child.stem.casefold() == (path.stem + "_0000_0000").casefold():
+                return child.with_name(child.stem.split("_0000_0000")[0])
+    else:
+        return path
+
+def check_files(filename, exts):
     """
     takes filename string and list of extensions, checks that they all exist and
     returns a Path
     """
-    #TODO test whether IOError (deprecated) or OSError is better handled by Orange
     p = Path(filename)
-    if p.suffix == ".dmt":
-        for child in p.parent.iterdir():
-            if child.suffix == ".dmt":
-                continue
-            elif child.stem.casefold() == (p.stem + "_0000_0000").casefold():
-                p = child.with_name(child.stem.split("_0000_0000")[0])
-                break
+    p = base_data_path(p)
     for ext in exts:
         if ext == ".dmt":
             # Always lowercase
@@ -287,7 +295,7 @@ class agilentImage(DataObject):
 
     def __init__(self, filename, MAT=False):
         super().__init__()
-        p = _check_files(filename, [".dat", ".bsp"])
+        p = check_files(filename, [".dat", ".bsp"])
         self.MAT = MAT
         self._get_bsp_info(p)
         self._get_dat(p)
@@ -334,7 +342,7 @@ class agilentMosaicTiles(DataObject):
 
     def __init__(self, filename, MAT=False):
         super().__init__()
-        p = _check_files(filename, [".dmt", ".dmd"])
+        p = check_files(filename, [".dmt", ".dmd"])
         self.MAT = MAT
         self._get_dmt_info(p)
         self._get_tiles(p)
@@ -460,7 +468,7 @@ class agilentImageIFG(DataObject):
 
     def __init__(self, filename, MAT=False):
         super().__init__()
-        p = _check_files(filename, [".seq", ".bsp"])
+        p = check_files(filename, [".seq", ".bsp"])
         self.MAT = MAT
         self._get_bsp_info(p)
         self._get_seq(p)
@@ -504,7 +512,7 @@ class agilentMosaicIFGTiles(DataObject):
 
     def __init__(self, filename, MAT=False):
         super().__init__()
-        p = _check_files(filename, [".dmt", ".drd"])
+        p = check_files(filename, [".dmt", ".drd"])
         self.MAT = MAT
         self._get_dmt_info(p)
         self._get_tiles(p)
