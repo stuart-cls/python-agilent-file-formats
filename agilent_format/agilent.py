@@ -20,7 +20,7 @@ def _check_files(filename, exts):
             if child.suffix == ".dmt":
                 continue
             elif child.stem.casefold() == (p.stem + "_0000_0000").casefold():
-                p = child.with_name(child.stem.split("_0000_0000")[0] + p.suffix)
+                p = child.with_name(child.stem.split("_0000_0000")[0])
                 break
     for ext in exts:
         if ext == ".dmt":
