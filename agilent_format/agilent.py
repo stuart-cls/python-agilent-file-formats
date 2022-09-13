@@ -23,6 +23,18 @@ def base_data_path(path: Path) -> Path:
     else:
         return path
 
+def bsp_path(path: Path) -> Path:
+    """
+    Find the correct Path for the bsp file
+
+    Necessary as bsp can be equal to .dat/.seq, or lowercase
+    """
+    bsp = path.with_suffix(".bsp")
+    if bsp.is_file():
+        return bsp
+    else:
+        return path.parent.joinpath(bsp.name.lower())
+
 def check_files(filename, exts):
     """
     takes filename string and list of extensions, checks that they all exist and
@@ -33,10 +45,13 @@ def check_files(filename, exts):
     for ext in exts:
         if ext == ".dmt":
             # Always lowercase
-            ps = p.parent.joinpath(p.with_suffix(ext).name.lower())
+            ps = dmt_path(p)
         elif ext in [".drd", ".dmd"]:
             # Always has at least _0000_0000 tile
             ps = p.parent.joinpath(p.stem + "_0000_0000" + ext)
+        elif ext == ".bsp":
+            # Can be lowercase (if reprocessed, for example)
+            ps = bsp_path(p)
         else:
             ps = p.with_suffix(ext)
         if not ps.is_file():
@@ -306,11 +321,11 @@ class agilentImage(DataObject):
         self.wavenumbers = self.info['wavenumbers']
         self.width = self.data.shape[0]
         self.height = self.data.shape[1]
-        self.filename = p.with_suffix(".bsp").as_posix()
+        self.filename = bsp_path(p).as_posix()
         self.acqdate = self.info['Time Stamp']
 
     def _get_bsp_info(self, p_in):
-        p = p_in.with_suffix(".bsp")
+        p = bsp_path(p_in)
         with p.open(mode='rb') as f:
             self.info.update(_get_wavenumbers(f))
             self.info.update(_get_params(f))
@@ -476,10 +491,10 @@ class agilentImageIFG(DataObject):
         self._get_bsp_info(p)
         self._get_seq(p)
 
-        self.filename = p.with_suffix(".bsp").as_posix()
+        self.filename = bsp_path(p).as_posix()
 
     def _get_bsp_info(self, p_in):
-        p = p_in.with_suffix(".bsp")
+        p = bsp_path(p_in)
         with p.open(mode='rb') as f:
             self.info.update(_get_ifg_params(f))
             self.info.update(_get_params(f))
