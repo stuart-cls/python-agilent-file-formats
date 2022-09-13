@@ -43,6 +43,9 @@ def check_files(filename, exts):
             raise OSError('File "{}" was not found.'.format(ps))
     return p
 
+def dmt_path(path: Path) -> Path:
+    return path.parent.joinpath(path.with_suffix(".dmt").name.lower())
+
 def _readint(f):
     return struct.unpack("i", f.read(4))[0]
 
@@ -350,14 +353,14 @@ class agilentMosaicTiles(DataObject):
         self.wavenumbers = self.info['wavenumbers']
         self.width = self.tiles.shape[0] * self.info['fpasize']
         self.height = self.tiles.shape[1] * self.info['fpasize']
-        self.filename = p.with_suffix(".dmt").as_posix()
+        self.filename = dmt_path(p).as_posix()
         self.acqdate = self.info['Time Stamp']
 
         self.vis = get_visible_images(p)
 
     def _get_dmt_info(self, p_in):
         # .dmt is always lowercase
-        p = p_in.parent.joinpath(p_in.with_suffix(".dmt").name.lower())
+        p = dmt_path(p_in)
         with p.open(mode='rb') as f:
             self.info.update(_get_wavenumbers(f))
             self.info.update(_get_params(f))
@@ -517,11 +520,11 @@ class agilentMosaicIFGTiles(DataObject):
         self._get_dmt_info(p)
         self._get_tiles(p)
 
-        self.filename = p.with_suffix(".dmt").as_posix()
+        self.filename = dmt_path(p).as_posix()
 
     def _get_dmt_info(self, p_in):
         # .dmt is always lowercase
-        p = p_in.parent.joinpath(p_in.with_suffix(".dmt").name.lower())
+        p = dmt_path(p_in)
         with p.open(mode='rb') as f:
             self.info.update(_get_ifg_params(f))
             self.info.update(_get_params(f))

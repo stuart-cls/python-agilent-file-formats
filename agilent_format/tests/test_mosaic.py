@@ -10,6 +10,7 @@ class TestMosaic(unittest.TestCase):
     def test_load_mosaic(self):
         f = "agilent_format/datasets/5_mosaic_agg1024.dmt"
         ai = agilentMosaic(f, MAT=False)
+        self.assertEqual(ai.filename, f)
         # Check parameters
         Npts = ai.info['Npts']
         self.assertEqual(Npts, 9)

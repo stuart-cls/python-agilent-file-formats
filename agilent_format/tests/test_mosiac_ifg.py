@@ -9,6 +9,7 @@ class TestMosaicIFG(unittest.TestCase):
     def test_load_ifg_mosaic(self):
         f = "agilent_format/datasets/5_mosaic_agg1024.dmt"
         aifg = agilentMosaicIFG(f, MAT=False)
+        self.assertEqual(aifg.filename, f)
         # Check parameters
         assert aifg.data.shape == (8, 4, 311)
         assert aifg.info['Npts'] == 311
