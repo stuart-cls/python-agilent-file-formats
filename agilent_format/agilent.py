@@ -1,4 +1,4 @@
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 import configparser
 from pathlib import Path
@@ -97,8 +97,8 @@ def _get_params(f):
     STRP = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15\x16\x17\x18'
 
     def _get_section(dat, section):
-        skip = [b'', b'\n', b'\"', b'\t', b',', b'\r',
-                b'\x0b', b'\x0c', b'\x0e', b'\x0f', b'\x1a', b'\x1c']
+        skip = [b'', b'\n', b'\"', b'\t', b',', b'\r', b'#',
+                b'\x0b', b'\x0c', b'\x0e', b'\x0f', b'\x1a', b'\x1c', b'\x1e']
         d = {}
         part = dat.partition(bytes(section, encoding='utf8'))
         dat = part[2].lstrip(STRP)
