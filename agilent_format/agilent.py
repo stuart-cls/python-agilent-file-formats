@@ -94,11 +94,11 @@ def _get_params(f):
     Takes an open file handle and reads a preset selection of parameters
     returns in a dictionary
     """
-    STRP = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15\x16\x17\x18'
+    STRP = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19'
 
     def _get_section(dat, section):
-        skip = [b'', b'\n', b'\"', b'\t', b',', b'\r', b'#',
-                b'\x0b', b'\x0c', b'\x0e', b'\x0f', b'\x1a', b'\x1c', b'\x1e']
+        skip = [b'', b'\n', b'\"', b'\t', b',', b'\r', b'#', b'!', b'%',
+                b'\x0b', b'\x0c', b'\x0e', b'\x0f', b'\x1a', b'\x1c', b'\x1e', b'\x1f']
         d = {}
         part = dat.partition(bytes(section, encoding='utf8'))
         dat = part[2].lstrip(STRP)
@@ -496,6 +496,7 @@ class agilentImageIFG(DataObject):
     def _get_bsp_info(self, p_in):
         p = bsp_path(p_in)
         with p.open(mode='rb') as f:
+            self.info.update(_get_wavenumbers(f))  # All but 'wavenumbers' will be replaced in get_ifg_params
             self.info.update(_get_ifg_params(f))
             self.info.update(_get_params(f))
 
