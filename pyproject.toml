@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agilent-format"
+dynamic = ["version"]
+authors = [
+    { name="Stuart Read", email="stuart.read@lightsource.ca"}
+]
+description = "File reader for Agilent Resolutions Pro FT-IR images"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/stuart-cls/python-agilent-file-formats"
+Issues = "https://github.com/stuart-cls/python-agilent-file-formats/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "agilent_format.agilent.__version__"}
