@@ -350,11 +350,18 @@ class agilentImage(DataObject):
 def make_tile_loader(path, Npts, fpasize):
     """
     Returns a closure which will load the tile at :path: when called.
+
+    If the file is not present at loading time, return expected array filled with NaNs
     """
     def load_tile_data(path=path):
-        with path.open(mode='rb') as f:
-            tile = np.fromfile(f, dtype=np.float32)
-        tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
+        shape = (Npts, fpasize, fpasize)
+        shape_t = (shape[1], shape[2], shape[0])
+        if path.is_file():
+            with path.open(mode='rb') as f:
+                tile = np.fromfile(f, dtype=np.float32)
+            tile = _reshape_tile(tile, shape)
+        else:
+            tile = np.full(shape_t, np.nan, dtype=np.float32)
         return tile
     return load_tile_data
 
