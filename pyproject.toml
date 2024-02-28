@@ -24,5 +24,8 @@ classifiers = [
 Homepage = "https://github.com/stuart-cls/python-agilent-file-formats"
 Issues = "https://github.com/stuart-cls/python-agilent-file-formats/issues"
 
+[tool.setuptools]
+packages = ["agilent_format", "agilent_format.tests"]
+
 [tool.setuptools.dynamic]
 version = {attr = "agilent_format.agilent.__version__"}
