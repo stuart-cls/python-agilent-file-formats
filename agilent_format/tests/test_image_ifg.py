@@ -1,6 +1,7 @@
 import unittest
 
-from agilent_format import agilentImageIFG
+from agilent_format import agilentImageIFG, agilentImage
+
 
 class TestImageIFG(unittest.TestCase):
 
@@ -38,3 +39,11 @@ class TestImageIFG(unittest.TestCase):
         # Confirm image orientation
         self.assertAlmostEqual(aifg.data[1, 1, 0], 0.97700727)
         self.assertAlmostEqual(aifg.data[2, 2, 0], 1.0310643)
+
+    def test_ifg_processed_wn(self):
+        f = "agilent_format/datasets/background_agg256.seq"
+        f_dat = "agilent_format/datasets/background_agg256.dat"
+        aifg = agilentImageIFG(f, MAT=False)
+        wn_ifg = aifg.info['wavenumbers']
+        ai = agilentImage(f_dat, MAT=False)
+        self.assertEqual(ai.info['wavenumbers'], wn_ifg)
