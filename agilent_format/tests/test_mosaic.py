@@ -1,7 +1,9 @@
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 
-from numpy import float64
+from numpy import float64, isnan
 
 from agilent_format import agilentMosaic
 
@@ -57,3 +59,24 @@ class TestMosaic(unittest.TestCase):
                               'pos_y': -201.8752228163994,
                               'img_size_x': 1530.0,
                               'img_size_y': 1688.0,})
+
+    def test_load_partial_mosaic(self):
+        """Test a (synthetic) incomplete mosaic"""
+        with tempfile.TemporaryDirectory() as dir_name:
+            dest = Path(dir_name)
+            dmt = Path("agilent_format/datasets/5_mosaic_agg1024.dmt")
+            shutil.copyfile(dmt, dest.joinpath(dmt.name))
+            dmd0 = Path("agilent_format/datasets/5_Mosaic_agg1024_0000_0000.dmd")
+            shutil.copyfile(dmd0, dest.joinpath(dmd0.name))
+            dmd1 = Path("agilent_format/datasets/5_Mosaic_agg1024_0000_0001.dmd")
+            shutil.copyfile(dmd1, dest.joinpath(dmd1.name))
+            dmd2 = "5_Mosaic_agg1024_0001_0000.dmd"
+            shutil.copyfile(dmd0, dest.joinpath(dmd2))
+
+            ai = agilentMosaic(Path(dir_name, dmt.name), MAT=False)
+            # Confirm image orientation (completed data)
+            self.assertAlmostEqual(ai.data[0, 1, 1], 1.14792180)
+            self.assertAlmostEqual(ai.data[0, 2, 2], 1.14063489)
+            self.assertAlmostEqual(ai.data[1, 2, 3], 0.28298783)
+            # Confirm empty region (4th quadrant) is NaNs
+            self.assertTrue(isnan(ai.data[0, 4, 5]))
