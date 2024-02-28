@@ -205,11 +205,11 @@ def _fpa_size(datasize, Npts):
         datasize (int): size of data (after reading as float32)
         Npts (int):     number of points in spectra
     """
-    fpasize = datasize - 255
-    fpasize /= Npts
-    if fpasize not in [(2**n)**2 for n in range(1,8)]:
-        raise ValueError("Unexpected FPA size: {}".format(fpasize))
-    fpasize = int(np.sqrt(fpasize))
+    fpa_full = datasize - 255
+    fpa_sq = fpa_full / Npts
+    fpasize = int(np.sqrt(fpa_sq))
+    if fpa_sq not in [(2**n)**2 for n in range(1,8)]:
+        raise ValueError(f"Unexpected FPA size: {fpa_sq}, ({fpasize}, {fpasize}, {Npts})")
     return fpasize
 
 def _reshape_tile(data, shape):
