@@ -346,15 +346,28 @@ class agilentImage(DataObject):
         if DEBUG:
             print("FPA Size is {}".format(fpasize))
 
+
+def make_tile_loader(path, Npts, fpasize):
+    """
+    Returns a closure which will load the tile at :path: when called.
+    """
+    def load_tile_data(path=path):
+        with path.open(mode='rb') as f:
+            tile = np.fromfile(f, dtype=np.float32)
+        tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
+        return tile
+    return load_tile_data
+
+
 class agilentMosaicTiles(DataObject):
     """
     UNSTABLE API
 
-    This class provides an array of _get_dmd() closures to allow lazy tile-by-tile
+    This class provides an array of load_tile_data() closures to allow lazy tile-by-tile
     file loading by consumers.
 
-    The API is not considered stable at this time, so if you are wish to load
-    mosiac files with a stable interface, use agilentMosaic as in previous
+    The API is not considered stable at this time, so if you wish to load
+    mosaic files with a stable interface, use agilentMosaic as in previous
     versions.
     """
 
@@ -400,17 +413,8 @@ class agilentMosaicTiles(DataObject):
         tiles = np.zeros((xtiles, ytiles), dtype=object)
         for (x, y) in np.ndindex(tiles.shape):
             p_dmd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.dmd".format(x,y))
-            tiles[x, y] = self._get_dmd(p_dmd, Npts, fpasize)
+            tiles[x, y] = make_tile_loader(p_dmd, Npts, fpasize)
         self.tiles = tiles
-
-    @staticmethod
-    def _get_dmd(p_dmd, Npts, fpasize):
-        def _get_dmd_data(p_dmd=p_dmd):
-            with p_dmd.open(mode='rb') as f:
-                tile = np.fromfile(f, dtype=np.float32)
-            tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
-            return tile
-        return _get_dmd_data
 
 
 class agilentMosaic(agilentMosaicTiles):
@@ -521,11 +525,11 @@ class agilentMosaicIFGTiles(DataObject):
     """
     UNSTABLE API
 
-    This class provides an array of _get_drd() closures to allow lazy tile-by-tile
+    This class provides an array of load_tile_data() closures to allow lazy tile-by-tile
     file loading by consumers.
 
-    The API is not considered stable at this time, so if you are wish to load
-    mosiac files with a stable interface, use agilentMosaic as in previous
+    The API is not considered stable at this time, so if you wish to load
+    mosaic files with a stable interface, use agilentMosaicIFG as in previous
     versions.
     """
 
@@ -565,17 +569,8 @@ class agilentMosaicIFGTiles(DataObject):
         tiles = np.zeros((xtiles, ytiles), dtype=object)
         for (x, y) in np.ndindex(tiles.shape):
             p_drd = p_in.parent.joinpath(p_in.stem + "_{0:04d}_{1:04d}.drd".format(x,y))
-            tiles[x, y] = self._get_drd(p_drd, Npts, fpasize)
+            tiles[x, y] = make_tile_loader(p_drd, Npts, fpasize)
         self.tiles = tiles
-
-    @staticmethod
-    def _get_drd(p_drd, Npts, fpasize):
-        def _get_drd_data(p_drd=p_drd):
-            with p_drd.open(mode='rb') as f:
-                tile = np.fromfile(f, dtype=np.float32)
-            tile = _reshape_tile(tile, (Npts, fpasize, fpasize))
-            return tile
-        return _get_drd_data
 
 
 class agilentMosaicIFG(agilentMosaicIFGTiles):
