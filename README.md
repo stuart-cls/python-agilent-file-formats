@@ -1,4 +1,7 @@
 # python-agilent-file-formats
+Python library for reading FT-IR imaging datasets created by Resolutions Pro on
+Agilent Cary instruments with FPA area detectors.
+
 Port of https://bitbucket.org/AlexHenderson/agilent-file-formats/ to Python
 
 Developed for use in the [orange-spectroscopy](https://github.com/Quasars/orange-spectroscopy) add-in, which is part 
