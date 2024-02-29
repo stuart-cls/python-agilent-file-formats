@@ -1,7 +1,0 @@
-name: python-agilent-file-formats
-channels:
-- defaults
-dependencies:
-- python
-- numpy
-- matplotlib
