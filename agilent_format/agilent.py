@@ -62,10 +62,10 @@ def dmt_path(path: Path) -> Path:
     return path.parent.joinpath(path.with_suffix(".dmt").name.lower())
 
 def _readint(f):
-    return struct.unpack("i", f.read(4))[0]
+    return struct.unpack("<i", f.read(4))[0]
 
 def _readdouble(f):
-    return struct.unpack("d", f.read(8))[0]
+    return struct.unpack("<d", f.read(8))[0]
 
 def _get_wavenumbers(f):
     """
@@ -127,7 +127,7 @@ def _get_params(f):
     def _get_prop_d(dat, param):
         part = dat.partition(bytes(param, encoding='utf8'))
         val_b = part[2].partition(bytes("1.00", encoding='utf8'))[2]
-        val = struct.unpack("d", val_b[12:20])[0]
+        val = struct.unpack("<d", val_b[12:20])[0]
         return val
 
     def _get_prop_str(dat, param):
@@ -178,9 +178,9 @@ def _get_ifg_params(f):
     def _get_proptype_data(dat, param):
         part = dat.partition(bytes(param, encoding='utf8'))
         val_b = part[2].partition(bytes("1.00", encoding='utf8'))[2]
-        PtSep = struct.unpack("d", val_b[12:20])[0]
-        StartPt = struct.unpack("i", val_b[24:28])[0]
-        Npts = struct.unpack("i", val_b[32:36])[0]
+        PtSep = struct.unpack("<d", val_b[12:20])[0]
+        StartPt = struct.unpack("<i", val_b[24:28])[0]
+        Npts = struct.unpack("<i", val_b[32:36])[0]
         return PtSep, StartPt, Npts
 
     d = {}
@@ -333,7 +333,7 @@ class agilentImage(DataObject):
     def _get_dat(self, p_in):
         p = p_in.with_suffix(".dat")
         with p.open(mode='rb') as f:
-            data = np.fromfile(f, dtype=np.float32)
+            data = np.fromfile(f, dtype='<f')
         fpasize = _fpa_size(data.size, self.info['Npts'])
         data = _reshape_tile(data, (self.info['Npts'], fpasize, fpasize))
 
@@ -358,10 +358,10 @@ def make_tile_loader(path, Npts, fpasize):
         shape_t = (shape[1], shape[2], shape[0])
         if path.is_file():
             with path.open(mode='rb') as f:
-                tile = np.fromfile(f, dtype=np.float32)
+                tile = np.fromfile(f, dtype='<f')
             tile = _reshape_tile(tile, shape)
         else:
-            tile = np.full(shape_t, np.nan, dtype=np.float32)
+            tile = np.full(shape_t, np.nan, dtype='<f')
         return tile
     return load_tile_data
 
@@ -514,7 +514,7 @@ class agilentImageIFG(DataObject):
     def _get_seq(self, p_in):
         p = p_in.with_suffix(".seq")
         with p.open(mode='rb') as f:
-            data = np.fromfile(f, dtype=np.float32)
+            data = np.fromfile(f, dtype='<f')
         fpasize = _fpa_size(data.size, self.info['Npts'])
         data = _reshape_tile(data, (self.info['Npts'], fpasize, fpasize))
 
