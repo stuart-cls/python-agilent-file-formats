@@ -1,6 +1,12 @@
 # Release
 
-Using all the new stuff, everything is in `pyproject.toml`:
+Tag the release, mark as a Release on github and the package will be published to pypi.
 
-`python -m build`
-`twine upload dist/*`
+## Manually
+
+Everything is in `pyproject.toml`:
+
+```
+python -m build
+twine upload dist/*
+```
