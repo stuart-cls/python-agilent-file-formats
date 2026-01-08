@@ -47,6 +47,20 @@ class TestFilenames(unittest.TestCase):
         self.assertEqual(agilent_format.base_data_path(dmt).name, "AB9")
         self.assertEqual(agilent_format.check_files(dmt, ['.dmt', '.dmd']).name, "AB9")
 
+    def test_DMT_DMD(self):
+        filenames = ["AB9.dmt",
+                     "ab9.bsp",
+                     "ab9.dat",
+                     "ab9.dms",
+                     "ab9.seq",
+                     "AB9_0000_0000.dmd",
+                     "AB9_0000_0000.drd",
+                     ]
+        self.add_files_to_dir(filenames)
+        dmt = self._temp_path.joinpath(filenames[0])
+        self.assertEqual(agilent_format.base_data_path(dmt).name, "AB9")
+        self.assertEqual(agilent_format.check_files(dmt, ['.dmt', '.dmd']).name, "AB9")
+
     def test_dmt_DRD(self):
         filenames = ["ab9.dmt",
                      "AB9.bsp",

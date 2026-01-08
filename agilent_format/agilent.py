@@ -44,22 +44,30 @@ def check_files(filename, exts):
     p = base_data_path(p)
     for ext in exts:
         if ext == ".dmt":
-            # Always lowercase
             ps = dmt_path(p)
         elif ext in [".drd", ".dmd"]:
             # Always has at least _0000_0000 tile
             ps = p.parent.joinpath(p.stem + "_0000_0000" + ext)
         elif ext == ".bsp":
-            # Can be lowercase (if reprocessed, for example)
             ps = bsp_path(p)
         else:
             ps = p.with_suffix(ext)
         if not ps.is_file():
-            raise OSError('File "{}" was not found.'.format(ps))
+            raise FileNotFoundError('File "{}" was not found.'.format(ps))
     return p
 
 def dmt_path(path: Path) -> Path:
-    return path.parent.joinpath(path.with_suffix(".dmt").name.lower())
+    """
+    Returns a Path object for the dmt file for the provided path.
+
+    Defaults to `.lower()` but checks if it exists and falls back to case matching.
+    """
+    dmt_file = path.parent.joinpath(path.with_suffix(".dmt").name.lower())
+    if not dmt_file.is_file():
+        dmt_file = path.parent.joinpath(path.with_suffix(".dmt").name)
+        if not dmt_file.is_file():
+            raise FileNotFoundError('File "{}" was not found.'.format(dmt_file))
+    return dmt_file
 
 def _readint(f):
     return struct.unpack("<i", f.read(4))[0]
@@ -394,7 +402,6 @@ class agilentMosaicTiles(DataObject):
         self.vis = get_visible_images(p)
 
     def _get_dmt_info(self, p_in):
-        # .dmt is always lowercase
         p = dmt_path(p_in)
         with p.open(mode='rb') as f:
             self.info.update(_get_wavenumbers(f))
@@ -550,7 +557,6 @@ class agilentMosaicIFGTiles(DataObject):
         self.filename = dmt_path(p).as_posix()
 
     def _get_dmt_info(self, p_in):
-        # .dmt is always lowercase
         p = dmt_path(p_in)
         with p.open(mode='rb') as f:
             self.info.update(_get_ifg_params(f))
